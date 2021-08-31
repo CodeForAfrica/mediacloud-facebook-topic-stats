@@ -3,43 +3,36 @@ from bs4 import BeautifulSoup
 import urllib.parse
 import urllib.request
 
-def generate_facebook_iframes(url, width=35, height=65):
+headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X x.y; rv:42.0) Gecko/20100101 Firefox/42.0",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Referer": "https://mediacloud.org/"
+}
+
+def generate_facebook_stats(url, width=35, height=65):
     url = urllib.parse.quote_plus(url)
-    like_iframe = f"""<iframe src="https://en-gb.facebook.com/plugins/like.php?href={url}&width={width}&layout=box_count&action=like&size=small&share=false&height={height}&appId" width="{width}" height="{height}" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>""".strip()
-    share_iframe = f"""<iframe src="https://en-gb.facebook.com/plugins/share_button.php?href={url}&layout=box_count&size=small&width={width}&height={height}&appId" width="{width}" height="{height}" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>""".strip()
 
-    return {
-        "like_iframe": like_iframe,
-        "share_iframe": share_iframe
-    }
+    # Since facebook returns the aggregate of likes count, shares count and comments count in likes plugin, shares plugin and comments plugin,
+    # we can use any of the plugin to get the total stats of a shared url
+    stats_url = f"""https://en-gb.facebook.com/plugins/like.php?href={url}&width={width}&layout=box_count&action=like&size=small&share=false&height={height}&appId"""
+    return stats_url
 
-def generate_iframe_soup(iframe):
-    soup = BeautifulSoup(iframe, 'html.parser')
-    tag = soup.find_all('iframe')[0]
-    request = urllib.request.Request(tag['src'])
+def generate_iframe_soup(likes_url):
+    request = urllib.request.Request(likes_url, headers=headers)
     response = urllib.request.urlopen(request)
     iframe_soup = BeautifulSoup(response, "html.parser")
     return iframe_soup
 
-def extract_facebook_likes(iframe):
-    iframe_soup = generate_iframe_soup(iframe)
-    likes_count = iframe_soup.select_one('table td .inlineBlock span').text
-    return likes_count
+def extract_facebook_stats(stats_url):
+    iframe_soup = generate_iframe_soup(stats_url)
+    stats_count = iframe_soup.select_one('table td .inlineBlock span').text
+    if stats_count.endswith("K"): # e.g 1.2K => one thousand two hundred. We require another 100 in order to get to 1.3K so we can say the accuracy is 100 
+        accuracy = 100
+    elif stats_count.endswith("M"): # e.g 1.2M => one million two hundred thousand. We require another 100,000 in order to get to 1.3M so we can say the accuracy is 100,000
+        accuracy = 100000
+    elif stats_count.endswith("B"): # e.g 1.2B => one billion two hundred million. We require another 1,000,000 in order to get to 1.3B so we can say the accuracy is 1,000,000
+        accuracy = 1000000
+    else:
+        accuracy = 1
 
-def extract_facebook_shares(iframe):
-    iframe_soup = generate_iframe_soup(iframe)
-    shares_count = iframe_soup.select_one('span').text
-    return shares_count
-
-def extract_facebook_comments_count(iframe):
-    return shares_count
-
-
-url = 'https://www.youtube.com/watch?app=desktop&v=wAuzCjipF00' # example URl
-
-iframes = generate_facebook_iframes(url)
-like_iframe = iframes["like_iframe"]
-share_iframe = iframes["share_iframe"]
-likes_count = extract_facebook_likes(like_iframe)
-shares_count = extract_facebook_shares(share_iframe)
-print(f"{url} - Likes: {likes_count} Shares: {shares_count}")
+    return {"count": stats_count, "accuracy": accuracy}
