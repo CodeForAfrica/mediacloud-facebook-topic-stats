@@ -9,7 +9,7 @@ headers = {
     "Referer": "https://mediacloud.org/"
 }
 
-def generate_facebook_stats(url, width=35, height=65):
+def generate_facebook_stats_url(url, width=35, height=65):
     url = urllib.parse.quote_plus(url)
 
     # Since facebook returns the aggregate of likes count, shares count and comments count in likes plugin, shares plugin and comments plugin,
