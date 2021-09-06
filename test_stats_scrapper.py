@@ -14,3 +14,15 @@ class TestStatsExtractor(TestCase):
         assert "count" in stats
         assert "accuracy" in stats
         assert stats["count"] > 0
+    
+    def test_get_stats_on_invalid_url(self):
+        invalid_url = "http://totally.bogus.url.123456.com"
+        stats = self.stats_extractor.get_stats(invalid_url)
+        assert type(stats) == dict
+        assert int(stats["count"]) == 0
+    
+    def test_get_stats_on_a_non_url(self):
+        non_url = "notaurl"
+        stats = self.stats_extractor.get_stats(non_url)
+        assert type(stats) == dict
+        assert "Can't generate stats url for the given URL" in stats["error"]["message"]
