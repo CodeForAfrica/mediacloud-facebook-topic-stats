@@ -1,7 +1,16 @@
-from stats_scrapper import generate_facebook_stats_url, extract_facebook_stats
+from unittest import TestCase
+from stats_scrapper import StatsExtractor
 
-with open('urls.txt') as f:
-    for url in f.readlines():
-        stats_url = generate_facebook_stats_url(url)
-        likes_shares_comments_count = extract_facebook_stats(stats_url, url)
-        print(f"{url.strip()} - {likes_shares_comments_count}")
+class TestStatsExtractor(TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.stats_extractor = StatsExtractor()
+
+    def test_stats_get_fetched(self):
+        # test that stats actually get fetched
+        url_to_get_stats_for = "https://developers.facebook.com/docs/plugins/comments#configurator"
+        stats = self.stats_extractor.get_stats(url_to_get_stats_for)
+        assert type(stats) == dict
+        assert "count" in stats
+        assert "accuracy" in stats
+        assert stats["count"] > 0
