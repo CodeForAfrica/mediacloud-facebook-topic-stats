@@ -8,7 +8,7 @@ headers = {
     "Accept-Language": "en-US,en;q=0.5",
 }
 
-def generate_facebook_stats_url(url, width=35, height=65):
+def generate_facebook_stats_url(url: str, width:int=35, height:int=65) -> str:
     url = urllib.parse.quote_plus(url)
 
     # Since facebook returns the aggregate of likes count, shares count and comments count in likes plugin, shares plugin and comments plugin,
@@ -16,14 +16,14 @@ def generate_facebook_stats_url(url, width=35, height=65):
     stats_url = f"""https://en-gb.facebook.com/plugins/like.php?href={url}&width={width}&layout=box_count&action=like&size=small&share=false&height={height}&appId"""
     return stats_url
 
-def generate_iframe_soup(likes_url, referer_url):
+def generate_iframe_soup(likes_url:str, referer_url:str) -> BeautifulSoup:
     headers["Referer"] = referer_url
     request = urllib.request.Request(likes_url, headers=headers)
     response = urllib.request.urlopen(request)
     iframe_soup = BeautifulSoup(response, "html.parser")
     return iframe_soup
 
-def extract_facebook_stats(stats_url, referer_url):
+def extract_facebook_stats(stats_url:str, referer_url:str) -> dict:
     iframe_soup = generate_iframe_soup(stats_url, referer_url)
     stats_count = iframe_soup.select_one('table td .inlineBlock span').text
     if stats_count.endswith("K"): # e.g 1.2K => one thousand two hundred. We require another 100 in order to get to 1.3K so we can say the accuracy is 100 
